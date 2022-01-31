@@ -40,3 +40,7 @@ class WriteUserSerializer(serializers.ModelSerializer):
             "last_name", 
             "email"
         )
+
+    def validate_first_name(self, value):
+        return value.title()
+
