@@ -6,8 +6,21 @@ from rest_framework.permissions import IsAuthenticated
 
 from rooms.models import Room
 from rooms.serializers import RoomSerializer
-from .serializers import ReadUserSerializer, WriteUserSerializer
+from .serializers import UserSerializer
 from .models import User
+
+
+class UsersView(APIView):
+    """
+    유저 생성하기
+    """
+    def post(self, request):
+        serializer = UserSerializer(data=request.data)
+        if serializer.is_valid():
+            new_user = serializer.save()
+            return Response(UserSerializer(new_user).data)
+        else:
+            return Response(serializer.error, status=status.HTTP_400_BAD_REQUEST)
 
 
 class MeView(APIView):
@@ -18,28 +31,16 @@ class MeView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        return Response(ReadUserSerializer(request.user).data)
+        return Response(UserSerializer(request.user).data)
 
     def put(self, request):
-        serializers = WriteUserSerializer(request.user, data=request.data, partial=True)
+        serializer = UserSerializer(request.user, data=request.data, partial=True)
 
-        if serializers.is_valid():
-            serializers.save()
-            return Response(serializers.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
         else:
-            return Response(serializers.error, status=status.HTTP_400_Bad_Request)
-
-
-@api_view(["GET"])
-def user_detail(request, pk):
-    """
-    유저 정보 가져오기
-    """
-    try:
-        user = User.objects.get(pk=pk)
-        return Response(ReadUserSerializer(user).data)
-    except User.DoesNotExist:
-        return Response(status=status.HTTP_404_NOT_FOUND)
+            return Response(serializer.error, status=status.HTTP_400_BAD_REQUEST)
 
 
 class FavsView(APIView):
@@ -67,3 +68,15 @@ class FavsView(APIView):
                 pass
 
         return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["GET"])
+def user_detail(request, pk):
+    """
+    유저 정보 가져오기
+    """
+    try:
+        user = User.objects.get(pk=pk)
+        return Response(UserSerializer(user).data)
+    except User.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
