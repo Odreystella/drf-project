@@ -1,17 +1,17 @@
 import jwt
 
-from django.contrib.auth import authenticate
 from django.conf import settings
+from django.contrib.auth import authenticate
 from rest_framework import status
-from rest_framework.views import APIView
 from rest_framework.decorators import api_view
-from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from rooms.models import Room
 from rooms.serializers import RoomSerializer
-from .serializers import UserSerializer
 from .models import User
+from .serializers import UserSerializer
 
 
 class UsersView(APIView):
@@ -88,6 +88,9 @@ def user_detail(request, pk):
 
 @api_view(["POST"])
 def login(request):
+    """
+    로그인 성공 시 jwt 발급
+    """
     username = request.data.get("username")
     password = request.data.get("password")
 
@@ -97,7 +100,7 @@ def login(request):
     user = authenticate(username=username, password=password)
 
     if user is not None:
-        encoded_jwt = jwt.encode({"user_id": user.pk}, settings.SECRET_KEY, algorithm="HS256")
+        encoded_jwt = jwt.encode({"pk": user.pk}, settings.SECRET_KEY, algorithm="HS256")
         return Response(data={"token": encoded_jwt})
     else:
         return Response(status=status.HTTP_401_UNAUTHORIZED)
