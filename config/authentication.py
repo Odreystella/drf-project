@@ -14,9 +14,9 @@ class JWTAuthentication(authentication.BaseAuthentication):
             if token is None:
                 return None
             xjwt, jwt_token = token.split(" ")
-            decoded = jwt.decode(jwt_token, settings.SECRET_KEY, \
+            decoded_jwt = jwt.decode(jwt_token, settings.SECRET_KEY, \
                 algorithms=["HS256"])
-            user = User.objects.get(pk=decoded.get("pk"))
+            user = User.objects.get(pk=decoded_jwt.get("pk"))
             return (user, None)
         except ValueError:
             return None
