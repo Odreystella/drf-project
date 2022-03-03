@@ -1,11 +1,11 @@
 from rest_framework import serializers
-from users.serializers import RelatedUserSerializer
+from users.serializers import UserSerializer
 
 from .models import Room
 
 
 class RoomSerializer(serializers.ModelSerializer):
-    user = RelatedUserSerializer()
+    user = UserSerializer(read_only=True)
     is_fav = serializers.SerializerMethodField(method_name="get_your_fav_list")
 
     class Meta:
@@ -32,3 +32,8 @@ class RoomSerializer(serializers.ModelSerializer):
             if user.is_authenticated:
                 return obj in user.favs.all()
         return False
+
+    def create(self, validated_data):
+        user = self.context.get("request").user
+        room = Room.objects.create(**validated_data, user=user)
+        return room
