@@ -3,10 +3,8 @@ import jwt
 from django.conf import settings
 from django.contrib.auth import authenticate
 from rest_framework import status
-from rest_framework.decorators import api_view, action
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import IsAdminUser, AllowAny
 
@@ -22,10 +20,15 @@ class UsersViewSet(ModelViewSet):
     serializer_class = UserSerializer
 
     def get_permissions(self):
+        print(self.action)
         permission_classes = []
         if self.action == "list":
             permission_classes = [IsAdminUser]
-        elif self.action == "create" or self.action =="retrieve":
+        elif (
+            self.action == "create" 
+            or self.action =="retrieve" 
+            or self.action == "favs"
+        ):
             permission_classes = [AllowAny]
         else:
             permission_classes = [IsMe]
@@ -49,27 +52,29 @@ class UsersViewSet(ModelViewSet):
         else:
             return Response(status=status.HTTP_401_UNAUTHORIZED)
 
-
-class FavsView(APIView):
-    """
-    로그인한 유저 favs 가져오기
-    로그인한 유저 favs에 방 추가/삭제하기
-    """
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        serializer = RoomSerializer(request.user.favs.all(), many=True).data
+    @action(detail=True)   # /api/v1/users/1/favs/, AllowAny
+    def favs(self, request, pk):
+        """
+        로그인한 유저 favs 가져오기
+        """
+        user = self.get_object()
+        serializer = RoomSerializer(user.favs.all(), many=True).data
         return Response(serializer)
 
-    def put(self, request):
+    @favs.mapping.put     # /api/v1/users/1/favs/, IsMe
+    def toggle_favs(self, request, pk):
+        """
+        로그인한 유저 favs에 방 추가/삭제하기
+        """
         pk = request.data.get("pk", None)
+        user = self.get_object()
         if pk is not None:
             try:
                 room = Room.objects.get(pk=pk)
-                if room in request.user.favs.all():
-                    request.user.favs.remove(room)
+                if room in user.favs.all():
+                    user.favs.remove(room)
                 else:
-                    request.user.favs.add(room)
+                    user.favs.add(room)
                 return Response()
             except Room.DoesNotExist:
                 pass
